@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+Minor/
+venv/
+.venv/
+
+# Secrets (API keys go here later)
+.env
+.env.*
+
+# Node / build output
+node_modules/
+dist/
+
+# Rebuildable outputs
+data/risk/

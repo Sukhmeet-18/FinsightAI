@@ -1,12 +1,24 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import yfinance as yf
-from fastapi.middleware.cors import CORSMiddleware # TO allow CORS eplciitly
-TICKERS=["RELIANCE.NS","TCS.NS","HINDUNILVR.NS","MARUTI.NS","ITC.NS"]
+import time
 
+from fastapi.middleware.cors import CORSMiddleware # TO allow CORS eplciitly
+from backend.risk_model.router import router as risk_router
+from pydantic import BaseModel
+from backend.common.data_loader import load_universe, load_prices, load_benchmark
+from backend.robo_advisor.optimizer import build_portfolio
+from backend.risk_model.router import get_model
+from backend.robo_advisor.risk_profile import score_risk_profile, QUESTIONS
+TICKERS=["RELIANCE.NS","TCS.NS","HINDUNILVR.NS","MARUTI.NS","ITC.NS"]
+CORE = ["RELIANCE", "TCS", "ITC", "MARUTI", "HINDUNILVR"]
+_robo_data={}
 _cache={}
+_overview_cache = {"t": 0, "data": None}
 CACHE_TTL_SECONDS=300
 
 app=FastAPI()
+
+app.include_router(risk_router, prefix="/risk", tags=["risk"])
 
 
 
@@ -16,7 +28,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
     allow_methods=["*"],
-    aloow_header=["*"]
+    allow_headers=["*"]
 )
 
 
@@ -65,6 +77,20 @@ def score_to_label(score):
     else:
         return "Sell"
 
+
+def _robo_inputs():
+    if not _robo_data:
+        cap_of=load_universe()
+        prices=load_prices(list(cap_of),lookback_years=3)
+        _robo_data["cap_of"]=cap_of
+        _robo_data["prices"]=prices
+        _robo_data["bench"]=load_benchmark(index=prices.index)
+    return _robo_data
+
+class RoboIn(BaseModel):
+    answers:list[int]
+    capital:float=500000
+
 #APIS
 @app.get("/company/{ticker}")
 def get_company(ticker:str):
@@ -101,6 +127,51 @@ def get_scores():
 
     return scores
 
+
+@app.get("/robo/questions")
+def robo_questions():
+    return QUESTIONS
+
+
+@app.post("/robo/portfolio")
+def robo_portfolio(body:RoboIn):
+    try:
+        profile,score=score_risk_profile(body.answers)
+    except ValueError as e:
+        raise HTTPException(400,str (e))
+    d=_robo_inputs()
+    try:
+        result = build_portfolio(d["prices"], d["cap_of"], profile, body.capital,
+                                 benchmark=d["bench"], always_include=CORE,
+                                 risk_model=get_model())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    result["quiz_score"] = score
+    return result
+
+
+
+
+
+@app.get("/companies/overview")
+def companies_overview():
+    # one call for the dashboard: metrics + score + label, cached for 5 minutes
+    if _overview_cache["data"] and time.time() - _overview_cache["t"] < 300:
+        return _overview_cache["data"]
+
+    metrics = [get_metrics(t) for t in TICKERS]
+    rg = normalize([m["revenue_growth"] for m in metrics])
+    pm = normalize([m["profit_margin"] for m in metrics])
+    ro = normalize([m["roe"] for m in metrics])
+
+    out = []
+    for i, m in enumerate(metrics):
+        s = 0.4 * rg[i] + 0.3 * pm[i] + 0.3 * ro[i]
+        out.append({**m, "score": round(s * 100), "label": score_to_label(s)})
+
+    _overview_cache["t"] = time.time()
+    _overview_cache["data"] = out
+    return out
 
 
 

@@ -1,0 +1,44 @@
+import { COMPANIES } from './data';
+
+export const API = 'http://127.0.0.1:8000';
+
+// Takes the live numbers from the backend and puts them into the design's company cards.
+// Text like "why this score" and the risk tags are still sample content.
+export async function fetchCompanies() {
+  const res = await fetch(`${API}/companies/overview`);
+  if (!res.ok) throw new Error('Backend returned ' + res.status);
+  const live = await res.json();
+  return COMPANIES.map((c) => {
+    const l = live.find((x) => x.ticker === c.ticker + '.NS');
+    if (!l) return c;
+    return {
+      ...c,
+      price: l.current_price,
+      rev: l.revenue_growth * 100,
+      margin: l.profit_margin * 100,
+      roe: l.roe * 100,
+      score: l.score,
+      label: l.label,
+    };
+  }).sort((a, b) => b.score - a.score);
+}
+
+// Sends the 5 quiz answers (each 1-4) and the amount; returns the built portfolio.
+export async function buildPortfolio(answers, capital) {
+  let res;
+  try {
+    res = await fetch(`${API}/robo/portfolio`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers, capital }),
+    });
+  } catch {
+    throw new Error("Can't reach the backend. Is uvicorn running on port 8000?");
+  }
+  if (!res.ok) {
+    let msg = 'The backend returned an error (' + res.status + ').';
+    try { const j = await res.json(); if (j.detail) msg = j.detail; } catch { /* plain-text error, keep default */ }
+    throw new Error(msg);
+  }
+  return res.json();
+}
