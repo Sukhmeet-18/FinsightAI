@@ -192,10 +192,10 @@ for sym in symbols:
         continue
     px = pd.read_csv(price_path, index_col=0, parse_dates=True)
     for period_end in fw.index:
-        p0 = price_on_or_after(px, period_end)
-        p1 = price_on_or_after(px, period_end + pd.Timedelta(days=365))
-        b0 = price_on_or_after(bench, period_end)
-        b1 = price_on_or_after(bench, period_end + pd.Timedelta(days=365))
+        p0 = price_on_or_after(px, period_end + pd.Timedelta(days=90))
+        p1 = price_on_or_after(px, period_end + pd.Timedelta(days=455))
+        b0 = price_on_or_after(bench, period_end + pd.Timedelta(days=90))
+        b1 = price_on_or_after(bench, period_end + pd.Timedelta(days=455))
         if None in (p0, p1, b0, b1) or p0 == 0 or b0 == 0:
             continue
         r = fw.loc[period_end]

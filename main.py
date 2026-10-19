@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 import yfinance as yf
 import time
+from backend.classifier.service import model_view
 
 from fastapi.middleware.cors import CORSMiddleware # TO allow CORS eplciitly
 from backend.risk_model.router import router as risk_router
@@ -156,7 +157,7 @@ def robo_portfolio(body:RoboIn):
 @app.get("/companies/overview")
 def companies_overview():
     # one call for the dashboard: metrics + score + label, cached for 5 minutes
-    if _overview_cache["data"] and time.time() - _overview_cache["t"] < 300:
+    if _overview_cache["data"] and time.time() - _overview_cache["t"] < 60:
         return _overview_cache["data"]
 
     metrics = [get_metrics(t) for t in TICKERS]
@@ -167,7 +168,13 @@ def companies_overview():
     out = []
     for i, m in enumerate(metrics):
         s = 0.4 * rg[i] + 0.3 * pm[i] + 0.3 * ro[i]
-        out.append({**m, "score": round(s * 100), "label": score_to_label(s)})
+        out.append({**m, "score": round(s * 100), "label": score_to_label(s),
+                    "model": model_view(m["ticker"].replace(".NS", ""))})
+    for i, m in enumerate(metrics):
+        s = 0.4 * rg[i] + 0.3 * pm[i] + 0.3 * ro[i]
+        out.append({**m, "score": round(s * 100), "label": score_to_label(s),
+                    "model": model_view(m["ticker"].replace(".NS", "")),
+                    "fetched_at": int(time.time())})
 
     _overview_cache["t"] = time.time()
     _overview_cache["data"] = out

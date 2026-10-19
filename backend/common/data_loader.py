@@ -56,15 +56,33 @@ def load_prices(tickers=None, data_dir: str = DATA_DIR, end=None,
     if not series:
         raise ValueError("No price files found - run the data fetch script first.")
 
-    prices = pd.DataFrame(series).sort_index()
-    end_ts = pd.Timestamp(end) if end is not None else prices.index.max()
-    start_ts = end_ts - pd.DateOffset(years=lookback_years)
-    prices = prices.loc[(prices.index > start_ts) & (prices.index <= end_ts)]
+    return window_prices(pd.DataFrame(series).sort_index(), end, lookback_years, max_missing)
 
+
+def window_prices(table: pd.DataFrame, end=None, lookback_years: float = 3.0,
+                  max_missing: float = 0.05) -> pd.DataFrame:
+    """Cut a full price table down to a clean lookback window ending at `end`."""
+    end_ts = pd.Timestamp(end) if end is not None else table.index.max()
+    start_ts = end_ts - pd.DateOffset(years=lookback_years)
+    prices = table.loc[(table.index > start_ts) & (table.index <= end_ts)]
     coverage = prices.notna().mean()
     prices = prices.loc[:, coverage >= (1 - max_missing)]
-    prices = prices.ffill(limit=5).dropna()
-    return prices
+    return prices.ffill(limit=5).dropna()
+
+
+def load_close_table(tickers, data_dir: str = DATA_DIR) -> pd.DataFrame:
+    """
+    FULL price history (dates x tickers), no window and no dropping.
+    Stocks keep NaN before they were listed. Used by stress tests and backtests.
+    """
+    series = {}
+    for t in tickers:
+        path = os.path.join(data_dir, "prices", f"{t}.csv")
+        if os.path.exists(path):
+            s = read_close(path)
+            if not s.empty:
+                series[t] = s
+    return pd.DataFrame(series).sort_index()
 
 
 def load_benchmark(data_dir: str = DATA_DIR, index=None) -> pd.Series:

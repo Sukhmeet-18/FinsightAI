@@ -6,6 +6,23 @@ import { inr, pct, EM, LABEL, LEVEL, Card, Skel, Tip, LabelChip, Ring, MiniBar, 
 
 const TINT = { 'Strong Buy': 'bg-brand-100', Buy: 'bg-[#E3F1E8]', Hold: 'bg-gold-100', Sell: 'bg-coral-100' };
 const CARD_SH = 'shadow-[0_1px_2px_rgba(60,50,30,.05),0_10px_28px_-12px_rgba(60,50,30,.18)]';
+
+const MODEL_CLS = { Buy: 'bg-brand-50 text-brand-800', Hold: 'bg-gold-100 text-gold-900', Sell: 'bg-coral-100 text-coral-900' };
+const ModelChip = ({ mv, dark }) => mv ? (
+  <div className={'flex items-center gap-2 text-xs ' + (dark ? 'text-stone-300' : 'text-stone-600')}>
+    <Tip term="Model view" tip="A learned model's rank for this company among about 150 NSE stocks. Top third Buy, middle Hold, bottom third Sell. Experimental: the evidence behind it is weak." />
+    <span className={'rounded-full px-2.5 py-1 font-semibold ' + MODEL_CLS[mv.label]}>{mv.label}</span>
+    <span className="text-[11px] opacity-80">experimental</span>
+  </div>
+) : null;
+const ModelPanel = ({ mv }) => (
+  <Card className="p-5">
+    <div className="flex items-center justify-between mb-1"><h3 className="font-semibold">Model view</h3><span className={'rounded-full px-3 py-1 text-xs font-semibold ' + MODEL_CLS[mv.label]}>{mv.label}</span></div>
+    <p className="text-sm text-stone-700">Ranks {mv.rank} of {mv.of} NSE stocks. The top third is Buy, the middle third Hold and the bottom third Sell.</p>
+    <ul className="mt-3 grid gap-1.5">{mv.drivers.map((x) => <li key={x.name} className="flex justify-between text-sm"><span className="text-stone-700">{x.name}</span><span className={'font-semibold ' + (x.effect >= 0 ? 'text-brand-800' : 'text-[#b8402e]')}><span aria-hidden="true">{x.effect >= 0 ? '▲ ' : '▼ '}</span>{x.effect >= 0 ? 'helps' : 'hurts'}</span></li>)}</ul>
+    <p className="text-xs text-stone-500 mt-3">Experimental. Trained on FY2022 to FY2025 results for about 150 NSE stocks. In testing its signal was weak and changed from year to year. It is not advice.</p>
+  </Card>
+);
 const CompanyCard = ({ c, onOpen, compare, selected, onToggle, featured: d }) => {
   const [open, setOpen] = useState(false);
   return (
@@ -30,6 +47,7 @@ const CompanyCard = ({ c, onOpen, compare, selected, onToggle, featured: d }) =>
           <MiniBar dark={d} name="Revenue growth" value={c.rev} max={40} tip="How much the company's sales grew versus last year." />
           <MiniBar dark={d} name="Profit margin" value={c.margin} max={40} tip="Out of every ₹100 of sales, how much is kept as profit." />
           <MiniBar dark={d} name="ROE" value={c.roe} max={50} tip="Return on equity: profit earned on every ₹100 of shareholder money." />
+          <ModelChip mv={c.mv} dark={d} />
           {d && <div className="h-16 -mx-1 mt-1" aria-hidden="true"><ResponsiveContainer><AreaChart data={revData(c)}><defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#E8A93A" stopOpacity=".4" /><stop offset="1" stopColor="#E8A93A" stopOpacity="0" /></linearGradient></defs><Area dataKey="v" stroke="#E8A93A" strokeWidth={2.5} fill="url(#fg)" /></AreaChart></ResponsiveContainer></div>}
         </div>
       </div>
@@ -64,6 +82,7 @@ const Drawer = ({ c, onClose, onAsk }) => {
           {ready ? <div className="h-44"><ResponsiveContainer><AreaChart data={priceSeries(c)}><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={EM} stopOpacity=".25" /><stop offset="1" stopColor={EM} stopOpacity="0" /></linearGradient></defs><XAxis dataKey="m" tickLine={false} axisLine={false} fontSize={12} interval={1} /><YAxis hide domain={['dataMin', 'dataMax']} /><RTooltip formatter={(v) => [inr(v), 'Price']} /><Area dataKey="p" stroke={EM} strokeWidth={2.5} fill="url(#pg)" /></AreaChart></ResponsiveContainer></div> : <Skel className="h-44" />}</Card>
         <Card className="p-5"><h3 className="font-semibold mb-3">Risk snapshot</h3>
           <div className="grid gap-2.5">{c.risks.map(([k, v]) => <div key={k} className="flex items-center justify-between"><span className="text-sm text-stone-700">{k}</span><span className={'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ' + LEVEL[v][0]}><span aria-hidden="true">{LEVEL[v][1]}</span>{v}</span></div>)}</div></Card>
+          {c.mv && <ModelPanel mv={c.mv} />}  
         <Btn onClick={() => onAsk(c.id)}>Ask about this report →</Btn>
       </aside>
     </div>
@@ -83,15 +102,30 @@ const ComparePanel = ({ items, onClear }) => (
     </div>
   </Card>
 );
+// Is the NSE in its trading hours right now? (Mon to Fri, 9:15 to 15:30 India time; exchange holidays are not known)
+const nseOpen = () => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+  const mins = Number(p.hour) * 60 + Number(p.minute);
+  return p.weekday !== 'Sat' && p.weekday !== 'Sun' && mins >= 555 && mins < 930;
+};
+const istTime = (sec) => new Date(sec * 1000).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
 const Companies = ({ onAsk }) => {
   const [companies, setCompanies] = useState(null);
   const [error, setError] = useState(false);
-  const [sel, setSel] = useState(null);
+  const [selId, setSelId] = useState(null);
   const [compare, setCompare] = useState(false);
   const [picked, setPicked] = useState([]);
   const load = () => { setError(false); setCompanies(null); fetchCompanies().then(setCompanies).catch(() => setError(true)); };
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // every minute, while the NSE is open and this tab is visible: quietly refresh the prices (keep the old ones if it fails)
+    const id = setInterval(() => { if (nseOpen() && !document.hidden) fetchCompanies().then(setCompanies).catch(() => {}); }, 60000);
+    return () => clearInterval(id);
+  }, []);
   const loading = companies === null && !error;
+  const selected = companies && companies.find((c) => c.id === selId);
+  const fetchedAt = companies && companies[0] && companies[0].fetchedAt;
   const toggle = (id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : p.length < 3 ? [...p, id] : p));
   return (
     <div>
@@ -115,12 +149,11 @@ const Companies = ({ onAsk }) => {
       {loading && <p className="text-sm text-stone-600 mb-4" aria-live="polite">Fetching live data. The first load can take 10–20 seconds.</p>}
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {loading ? [0, 1, 2].map((i) => <Card key={i} className="p-5 grid gap-4"><div className="flex gap-4"><Skel className="h-16 w-16 rounded-full" /><div className="flex-1 grid gap-2"><Skel className="h-5 w-2/3" /><Skel className="h-3 w-1/3" /></div></div><Skel className="h-8 w-1/2" /><Skel className="h-12" /><Skel className="h-12" /></Card>)
-          : (companies || []).map((c, n) => <CompanyCard key={c.id} featured={n === 0 && !compare} c={c} onOpen={setSel} compare={compare} selected={picked.includes(c.id)} onToggle={toggle} />)}
+          : (companies || []).map((c, n) => <CompanyCard key={c.id} featured={n === 0 && !compare} c={c} onOpen={(x) => setSelId(x.id)} compare={compare} selected={picked.includes(c.id)} onToggle={toggle} />)}
       </div>
-      {companies && <p className="text-xs text-stone-500 mt-4">Scores, prices and ratios are live from the backend. Charts, the "Why" text and risk tags are still sample content.</p>}
-      {sel && <Drawer c={sel} onClose={() => setSel(null)} onAsk={(id) => { setSel(null); onAsk(id); }} />}
+      {companies && <p className="text-xs text-stone-500 mt-4">{fetchedAt ? 'Prices from Yahoo Finance, fetched ' + istTime(fetchedAt) + ' IST. ' : ''}They refresh every minute during NSE hours (9:15 to 15:30 IST, Monday to Friday); otherwise you see the last close. Charts, the "Why" text and risk tags are still sample content.</p>}
+      {selected && <Drawer c={selected} onClose={() => setSelId(null)} onAsk={(id) => { setSelId(null); onAsk(id); }} />}
     </div>
   );
 };
-
 export default Companies;

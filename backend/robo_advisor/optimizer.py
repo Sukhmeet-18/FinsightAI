@@ -96,7 +96,29 @@ def _new_frontier(mu, S, cap_of, cfg, l2_gamma):
     return ef
 
 
-def optimize(mu, S, cap_of, profile, rf=RISK_FREE_RATE, l2_gamma=0.0):
+MIN_WEIGHT = 0.01   # no position smaller than 1% (avoids "crumb" holdings)
+
+
+def optimize(mu, S, cap_of, profile, rf=RISK_FREE_RATE, l2_gamma=0.0, min_weight=MIN_WEIGHT):
+    """
+    Solve once; if some positions are tiny (< min_weight), solve again using only
+    the stocks that got a real weight. All limits still hold exactly.
+    """
+    weights, perf, notes = _optimize_once(mu, S, cap_of, profile, rf, l2_gamma)
+    tiny = [t for t, w in weights.items() if w < min_weight]
+    if tiny:
+        keep = [t for t, w in weights.items() if w >= min_weight]
+        try:
+            _check_feasible(keep, cap_of, PROFILES[profile])
+            weights, perf, notes2 = _optimize_once(mu[keep], S.loc[keep, keep], cap_of,
+                                                   profile, rf, l2_gamma)
+            notes += notes2
+        except ValueError:
+            pass        # keep the first solution if the smaller set is not feasible
+    return weights, perf, notes
+
+
+def _optimize_once(mu, S, cap_of, profile, rf=RISK_FREE_RATE, l2_gamma=0.0):
     cfg = PROFILES[profile]
     _check_feasible(list(mu.index), cap_of, cfg)
     notes = []
@@ -141,6 +163,7 @@ def build_portfolio(prices, cap_of, profile, capital, benchmark=None, n_per_tier
             row["forecast_vol_annual"] = round(float(fvol[t]), 4)
         allocation.append(row)
 
+    invested = sum(a["shares"] * a["price"] for a in allocation)
     cap_split = {}
     for a in allocation:
         cap_split[a["cap"]] = round(cap_split.get(a["cap"], 0) + a["weight"], 4)
@@ -148,6 +171,8 @@ def build_portfolio(prices, cap_of, profile, capital, benchmark=None, n_per_tier
     result = {
         "profile": profile, "capital": capital, "as_of": str(px.index[-1].date()),
         "allocation": allocation, "cap_split": cap_split,
+        "invested_in_whole_shares": round(invested, 2),
+        "cash_left": round(capital - invested, 2),
         "metrics": {"exp_return": round(exp_ret, 4), "volatility": round(vol, 4),
                     "sharpe": round(sharpe, 3), "covariance_source": cov_source},
         "notes": notes,

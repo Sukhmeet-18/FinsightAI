@@ -19,6 +19,8 @@ export async function fetchCompanies() {
       roe: l.roe * 100,
       score: l.score,
       label: l.label,
+      mv: l.model,
+      fetchedAt: l.fetched_at
     };
   }).sort((a, b) => b.score - a.score);
 }
