@@ -63,7 +63,9 @@ def project_goal(weights: dict, prices: pd.DataFrame, capital: float, goal_amoun
     drift_source = "optimizer expected return" if expected_return is not None else "historical average"
 
     if method == "bootstrap":
-        monthly_pool = r.rolling(BLOCK).sum().dropna().values      # every real 21-day stretch
+        monthly_pool = r.rolling(BLOCK).sum().dropna().values     # every real 21-day stretch
+        if expected_return is not None:                            # overlapping windows under-count the first and last weeks,
+            monthly_pool = monthly_pool - monthly_pool.mean() + BLOCK * target   # so re-centre on the intended drift    
         sims = monthly_pool[rng.integers(0, len(monthly_pool), size=(n_sims, months))]
     elif method == "normal":
         m_mean = float(r.mean()) * BLOCK

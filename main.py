@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 import yfinance as yf
 import time
 from backend.classifier.service import model_view
+from backend.robo_advisor.router import router as portfolio_router
 
 from fastapi.middleware.cors import CORSMiddleware # TO allow CORS eplciitly
 from backend.risk_model.router import router as risk_router
@@ -20,6 +21,7 @@ CACHE_TTL_SECONDS=300
 app=FastAPI()
 
 app.include_router(risk_router, prefix="/risk", tags=["risk"])
+app.include_router(portfolio_router, prefix="/portfolio", tags=["portfolio"])
 
 
 

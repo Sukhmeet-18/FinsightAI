@@ -3,7 +3,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { COMPANIES } from '../data';
 import { buildPortfolio } from '../api';
 import { inr, EM, Card, Tip, Btn } from '../ui';
-
+import { GoalFields, AdvisorExtras } from './AdvisorExtras';
 const QUESTIONS = [
   ['How long can you keep this money invested?', ['Under 2 years', '2–4 years', '4–7 years', 'More than 7 years']],
   ['Your portfolio falls 20% in a month. What do you do?', ['Sell everything', 'Sell some to be safe', 'Hold and wait', 'Buy more at lower prices']],
@@ -18,6 +18,7 @@ const PROFILE = {
 };
 const BUILD = ['Reading market data…', 'Forecasting risk…', 'Balancing your portfolio…'];
 const CAP = [['₹1L', 100000], ['₹5L', 500000], ['₹10L', 1000000]];
+     
 const nameOf = (t) => COMPANIES.find((c) => c.ticker === t)?.name || t;
 const p1 = (x) => (Math.round(x * 1000) / 10).toFixed(1) + '%'; // 0.1545 -> 15.5% (rounds half up)
 
@@ -25,6 +26,7 @@ const Advisor = () => {
   const [step, setStep] = useState(0); // 0-4 questions, 5 capital, 6 building, 7 result
   const [ans, setAns] = useState([]);
   const [cap, setCap] = useState(500000);
+  const [goal, setGoal] = useState({ on: false, amount: 1500000, years: 7, sip: 5000 });
   const [bi, setBi] = useState(0);
   const [result, setResult] = useState(null);
   const [err, setErr] = useState('');
@@ -32,7 +34,7 @@ const Advisor = () => {
   const reset = () => { setStep(0); setAns([]); setResult(null); setErr(''); };
   const build = () => {
     setErr(''); setResult(null); setStep(6);
-    buildPortfolio(ans.map((a) => a + 1), cap).then((r) => { setResult(r); setStep(7); }).catch((e) => setErr(e.message));
+       buildPortfolio(ans.map((a) => a + 1), cap, goal.on ? { goal_amount: goal.amount, years: goal.years, monthly_contribution: goal.sip } : null).then((r) => { setResult(r); setStep(7); }).catch((e) => setErr(e.message));
   };
   const prog = step <= 5 ? (step / 6) * 100 : 100;
 
@@ -60,8 +62,9 @@ const Advisor = () => {
           <label htmlFor="cap" className="text-sm text-stone-600">Amount</label>
           <div className="flex items-center gap-2 border-b-2 border-brand-700 pb-2 mt-1"><span className="text-3xl font-bold text-stone-400">₹</span><input id="cap" inputMode="numeric" value={cap.toLocaleString('en-IN')} onChange={(e) => setCap(Number(e.target.value.replace(/\D/g, '')) || 0)} className="w-full text-4xl font-bold tabular-nums bg-transparent outline-none text-stone-900" /></div>
           <div className="flex flex-wrap gap-2 mt-5">{CAP.map(([l, v]) => <button key={l} onClick={() => setCap(v)} aria-pressed={cap === v} className={'rounded-full px-5 py-2.5 text-sm font-semibold ring-1 transition ' + (cap === v ? 'bg-brand-700 text-white ring-brand-700' : 'bg-white text-stone-800 ring-stone-200 hover:bg-stone-50')}>{l}</button>)}</div>
+          <GoalFields goal={goal} setGoal={setGoal} />
         </Card>
-        <div className="flex items-center justify-between mt-6"><button onClick={() => setStep(4)} className="text-sm font-medium text-stone-600">← Back</button><Btn disabled={cap < 10000} onClick={build}>Build my portfolio</Btn></div>
+        <div className="flex items-center justify-between mt-6"><button onClick={() => setStep(4)} className="text-sm font-medium text-stone-600">← Back</button><Btn disabled={cap < 10000 || (goal.on && (goal.amount <= 0 || goal.years <= 0))} onClick={build}>Build my portfolio</Btn></div>
       </div>}
       {step === 6 && (err
         ? <Card className="p-8 text-center !bg-coral-50" role="alert">
@@ -119,6 +122,7 @@ const Result = ({ r, reset }) => {
         </div>
         <p className="text-xs text-stone-500 mt-5">{cov ? `${cov[1]} of ${cov[2]} holdings use our AI risk model; the rest use historical data.` : f.coverage}{asOf && ` Prices as of ${asOf}.`}</p>
       </Card>}
+    <AdvisorExtras r={r} />
     </div>
   );
 };

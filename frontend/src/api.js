@@ -26,20 +26,24 @@ export async function fetchCompanies() {
 }
 
 // Sends the 5 quiz answers (each 1-4) and the amount; returns the built portfolio.
-export async function buildPortfolio(answers, capital) {
+export async function buildPortfolio(answers, capital, goal) {
   let res;
   try {
-    res = await fetch(`${API}/robo/portfolio`, {
+    res = await fetch(`${API}/portfolio/recommend`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answers, capital }),
+      body: JSON.stringify({ capital, risk_answers: answers, ...(goal || {}) }),
     });
   } catch {
     throw new Error("Can't reach the backend. Is uvicorn running on port 8000?");
   }
   if (!res.ok) {
     let msg = 'The backend returned an error (' + res.status + ').';
-    try { const j = await res.json(); if (j.detail) msg = j.detail; } catch { /* plain-text error, keep default */ }
+    try {
+      const j = await res.json();
+      if (typeof j.detail === 'string') msg = j.detail;
+      else if (Array.isArray(j.detail)) msg = 'Some of your inputs were not accepted. Please check them and try again.';
+    } catch { /* plain-text error, keep default */ }
     throw new Error(msg);
   }
   return res.json();
