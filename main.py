@@ -33,7 +33,7 @@ app.include_router(detector_router, prefix="/detector", tags=["detector"])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://finsight-ai-psi-seven.vercel.app"],
     allow_methods=["*"],
     allow_headers=["*"]
 )
