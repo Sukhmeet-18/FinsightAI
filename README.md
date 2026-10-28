@@ -1,3 +1,9 @@
+---
+title: FinSight AI
+sdk: docker
+app_port: 7860
+---
+
 # FinSight AI
 
 An integrated, explainable platform for financial analysis, document-grounded question answering and risk-aligned portfolio advice on NSE-listed companies. Built as a B.Tech major project at GTBIT (CSE-DS).

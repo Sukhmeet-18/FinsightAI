@@ -1,0 +1,10 @@
+Minor/
+frontend/
+documents/
+.git/
+.env
+.env.*
+__pycache__/
+*.pyc
+tests/
+reports/
