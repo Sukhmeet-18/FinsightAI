@@ -1,6 +1,6 @@
 import { COMPANIES } from './data';
 
-export const API = 'http://127.0.0.1:8000';
+export const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 // Takes the live numbers from the backend and puts them into the design's company cards.
 // Text like "why this score" and the risk tags are still sample content.
