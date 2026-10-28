@@ -1,0 +1,35 @@
+# FinSight AI backend. Install with:  pip install -r requirements.txt
+# Versions are the ones the project was built and tested with (lower bounds, so newer releases are fine).
+
+# web API
+fastapi
+uvicorn
+pydantic
+python-dotenv
+httpx
+
+# data and numbers
+yfinance>=1.7.0
+pandas>=2.3.3
+numpy>=2.2.6
+scipy>=1.15.3
+scikit-learn>=1.7.2
+joblib
+
+# risk model and portfolio optimiser
+arch>=8.0.0
+PyPortfolioOpt>=1.6.0
+
+# report assistant (RAG)
+pypdf
+sentence-transformers
+faiss-cpu
+google-genai
+
+# optional: charts for scripts/backtest_robo.py
+matplotlib
+
+# for running the tests:  pytest tests
+# pytest
+# reportlab
+# httpx

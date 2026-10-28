@@ -91,7 +91,7 @@ const StressTests = ({ r }) => {
                 <div className="flex justify-between text-sm"><span className="text-stone-700">{n}</span><span className="font-semibold tabular-nums">{pc(v)}</span></div>
                 <div className="h-2 rounded-full bg-white overflow-hidden"><div className="h-full rounded-full" style={{ width: (Math.abs(v) / max) * 100 + '%', background: c }} /></div>
               </div>))}
-            <p className="text-sm text-stone-700 mt-3">On {inr(r.capital)} that is about <b className="tabular-nums">{inr(Math.abs(s.estimated_amount_change))}</b> lost, back to even in about {s.days_to_recover} trading days.</p>
+            <p className="text-sm text-stone-700 mt-3">On {inr(r.capital)} that is about <b className="tabular-nums">{inr(Math.abs(s.estimated_amount_change))}</b> lost, back to its starting value about {s.days_to_recover} days after the low.</p>
             {s.coverage < 0.99 && <p className="text-xs text-stone-500 mt-1">Based on the {Math.round(s.coverage * 100)}% of today's holdings that already existed then.</p>}
           </div>))}
       </div>

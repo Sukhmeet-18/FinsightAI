@@ -1,0 +1,28 @@
+﻿ticker,question,answer,pages_shown,pages_cited,not_among_retrieved,correct (fill in),page correct (fill in)
+HINDUNILVR,What was the total revenue this year?,"The total revenue for the year ended 31 March 2026 was ₹64,468 crore [ p. 453 ].","[453, 276, 93, 366, 18, 280]",[],[],,
+HINDUNILVR,What are the biggest risks the company mentions?,"The report highlights commodity risk and currency risk as the principal exposures the company faces [p. 240][p. 329]. It also notes that cyber‑security and data‑privacy risks are addressed through a company‑wide policy [p. 204]. No product recalls, data breaches or consumer complaints were reported [p. 202].","[202, 329, 204, 240, 271]","[202, 329, 204, 240]",[],,
+HINDUNILVR,How much debt does the company have?,"The company’s debt consists of borrowings and lease liabilities, amounting to ₹ 1,479 crore (borrowings ₹ 1 crore + non‑current lease liabilities ₹ 1,104 crore + current lease liabilities ₹ 374 crore)【p. 365】.","[309, 268, 451, 365, 428]",[],[],,
+ITC,What was the total revenue this year?,"The total revenue for the year was ` 77,690.38 crores`【p. 157】.","[96, 346, 195, 157, 216, 97]",[],[],,
+ITC,What are the biggest risks the company mentions?,"The company highlights several major risks: a heightened cyber‑threat environment linked to its digital transformation [p. 104]; climate‑related physical and transition risks that can affect operations, sourcing and compliance costs [p. 355]; nature‑related risks such as water stress, extreme weather (droughts, floods), land‑use changes and soil quality [p. 117]; and key financial risks—including market, credit and liquidity risk—managed through its system‑based risk framework [p. 222][p. 329].","[104, 117, 329, 222, 355, 396]","[104, 117, 329, 222, 355]",[],,
+ITC,How much debt does the company have?,"The company’s borrowings amount to ₹ 91.26 crore (current borrowings) plus ₹ 9.52 crore (non‑current borrowings), giving a total debt of ₹ 100.78 crore [p. 250].","[250, 289, 156, 248, 346]",[250],[],,
+MARUTI,What was the total revenue this year?,"The total revenue from operations for the year was I 1,832,661 million [p. 200].","[200, 101, 223, 201, 182, 216]",[200],[],,
+MARUTI,What are the biggest risks the company mentions?,"The company cites disruption in its value‑chain and supply‑chain as a major risk, noting the need for risk‑management of suppliers, dealers and value‑chain continuity [p. 58]. It also highlights the risk of business‑continuity interruptions from fires, explosions, toxic releases, natural disasters and cyber‑security incidents, which are addressed in its Business Continuity and Disaster Management Plan [p. 167]. I could not find this in the report excerpts.","[58, 167, 169, 57, 156]","[58, 167]",[],,
+MARUTI,How much debt does the company have?,"The company’s total liabilities amount to ₹ 416,324 million as at March 31 2026 [p. 181].","[181, 207, 194, 245, 213]",[181],[],,
+RELIANCE,What was the total revenue this year?,"The total revenue for the year was ₹ 9,80,136 crore [ p. 116 ].","[63, 80, 106, 95, 100, 116]",[],[],,
+RELIANCE,What are the biggest risks the company mentions?,"The report highlights several major risks:
+
+- Data‑privacy risk arising from increased digital adoption and the need to comply with legal and regulatory requirements【p. 15】.  
+- Cybersecurity risk, which is considered essential for the company’s long‑term sustainability in a complex digital environment【p. 15】.  
+- Commodity‑price and foreign‑exchange risk, managed through a robust risk‑management framework and hedging actions【p. 31】.  
+- Credit risk from customers or counterparties failing to meet payment obligations, addressed through credit‑worthiness checks and guarantees【p. 89】.  
+- Compliance, control and financial risks, for which mitigation measures are detailed in the Management Discussion and Analysis Report【p. 41】.","[41, 89, 15, 32, 31]",[],[],,
+RELIANCE,How much debt does the company have?,"The company’s borrowings amount to ₹ 1,98,813 crore as shown in the financial liabilities schedule [p. 87].","[87, 55, 102, 72, 136, 89]",[87],[],,
+TCS,What was the total revenue this year?,"The total revenue for the year ended March 31 2025 was **₹ 2,59,286 crore** (the “TOTAL INCOME” figure)【p. 181】.","[181, 70, 96, 230, 226]",[],[],,
+TCS,What are the biggest risks the company mentions?,"The report highlights several major risks for TCS:
+
+- A constant rise in cyber‑attacks and related compliance challenges with complex, changing global regulations, which could cause reputational damage, penalties and operational impacts【p. 92】.  
+- Rapid technology disruption, especially from Generative‑AI, which may affect software development methods, market expectations and TCS’s value proposition【p. 93】.  
+- Infringement of intellectual‑property (IP) of customers, partners or suppliers, leading to litigation, liability and loss of revenue or ownership rights【p. 93】.  
+- Physical risks to life and property from extreme weather events, as well as transition and water‑scarcity risks that could disrupt operations and affect growth, profitability and reputation【p. 93】.  
+- Broader external threats such as restrictions on cross‑border movement of skilled personnel, disruptions in telecom networks, political instability, pandemics, natural disasters and general economic conditions affecting the industry【p. 336】.","[90, 93, 336, 92]",[],[],,
+TCS,How much debt does the company have?,"The company’s total debt (financial liabilities) consists of non‑current and current portions amounting to ₹ 14,754 crore [ p. 252 ].","[246, 247, 307, 269, 299, 252]",[],[],,

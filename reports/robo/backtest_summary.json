@@ -1,0 +1,110 @@
+{
+  "conservative": {
+    "profile": "conservative",
+    "start": "2023-01-02",
+    "end": "2026-10-01",
+    "rebalances": 15,
+    "rebalance_every_days": 63,
+    "avg_holdings": 14.7,
+    "avg_turnover_per_rebalance": 0.555,
+    "trading_cost": 0.001,
+    "used_risk_model": true,
+    "robo_advisor": {
+      "cagr": 0.1104,
+      "volatility": 0.1263,
+      "sharpe": 0.359,
+      "sortino": 0.484,
+      "max_drawdown": -0.2386,
+      "total_return": 0.4802
+    },
+    "equal_weight": {
+      "cagr": 0.2577,
+      "volatility": 0.185,
+      "sharpe": 1.042,
+      "sortino": 1.25,
+      "max_drawdown": -0.2316,
+      "total_return": 1.3605
+    },
+    "nifty50": {
+      "cagr": 0.0561,
+      "volatility": 0.126,
+      "sharpe": -0.07,
+      "sortino": -0.097,
+      "max_drawdown": -0.1577,
+      "total_return": 0.227
+    },
+    "notes": []
+  },
+  "balanced": {
+    "profile": "balanced",
+    "start": "2023-01-02",
+    "end": "2026-10-01",
+    "rebalances": 15,
+    "rebalance_every_days": 63,
+    "avg_holdings": 15.5,
+    "avg_turnover_per_rebalance": 0.665,
+    "trading_cost": 0.001,
+    "used_risk_model": true,
+    "robo_advisor": {
+      "cagr": 0.1038,
+      "volatility": 0.1374,
+      "sharpe": 0.283,
+      "sortino": 0.4,
+      "max_drawdown": -0.1919,
+      "total_return": 0.4477
+    },
+    "equal_weight": {
+      "cagr": 0.2577,
+      "volatility": 0.185,
+      "sharpe": 1.042,
+      "sortino": 1.25,
+      "max_drawdown": -0.2316,
+      "total_return": 1.3605
+    },
+    "nifty50": {
+      "cagr": 0.0561,
+      "volatility": 0.126,
+      "sharpe": -0.07,
+      "sortino": -0.097,
+      "max_drawdown": -0.1577,
+      "total_return": 0.227
+    },
+    "notes": []
+  },
+  "aggressive": {
+    "profile": "aggressive",
+    "start": "2023-01-02",
+    "end": "2026-10-01",
+    "rebalances": 15,
+    "rebalance_every_days": 63,
+    "avg_holdings": 10.0,
+    "avg_turnover_per_rebalance": 0.9,
+    "trading_cost": 0.001,
+    "used_risk_model": true,
+    "robo_advisor": {
+      "cagr": 0.1195,
+      "volatility": 0.1973,
+      "sharpe": 0.276,
+      "sortino": 0.362,
+      "max_drawdown": -0.208,
+      "total_return": 0.526
+    },
+    "equal_weight": {
+      "cagr": 0.2577,
+      "volatility": 0.185,
+      "sharpe": 1.042,
+      "sortino": 1.25,
+      "max_drawdown": -0.2316,
+      "total_return": 1.3605
+    },
+    "nifty50": {
+      "cagr": 0.0561,
+      "volatility": 0.126,
+      "sharpe": -0.07,
+      "sortino": -0.097,
+      "max_drawdown": -0.1577,
+      "total_return": 0.227
+    },
+    "notes": []
+  }
+}

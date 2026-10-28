@@ -3,8 +3,9 @@ import Companies from './screens/Companies';
 import Advisor from './screens/Advisor';
 import Ask from './screens/Ask';
 import SayShow from './screens/SayShow';
+import HowItWorks from './screens/HowItWorks';
 
-const TABS = [['companies', 'Companies', '◔'], ['advisor', 'Portfolio Advisor', '◐'], ['ask', 'Ask a Report', '❡'], ['say', 'Say vs. Show', '≋']];
+const TABS = [['companies', 'Companies', '◔'], ['advisor', 'Portfolio Advisor', '◐'], ['ask', 'Ask a Report', '❡'], ['say', 'Say vs. Show', '≋'], ['how', 'How it works', '▶']];
 const FinSightApp = () => {
   const [tab, setTab] = useState('companies');
   const [askCo, setAskCo] = useState(null);
@@ -23,9 +24,10 @@ const FinSightApp = () => {
         {tab === 'advisor' && <Advisor />}
         {tab === 'ask' && <Ask initial={askCo} />}
         {tab === 'say' && <SayShow />}
+        {tab === 'how' && <HowItWorks />}
       </main>
       <footer className="max-w-6xl mx-auto px-4 sm:px-6 pb-10 text-xs text-stone-500 leading-relaxed border-t border-stone-200/70 pt-6">FinSight AI is an educational tool and does not give financial advice. Backtested results are not guarantees of future returns. AI answers can be wrong, so check the source before you act. Data as of 1 Oct 2026.</footer>
-      <nav aria-label="Main" className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-stone-200 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">{TABS.map(([k, l, i]) => <button key={k} onClick={() => go(k)} aria-current={tab === k ? 'page' : undefined} className={'min-h-[60px] flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ' + (tab === k ? 'text-brand-800' : 'text-stone-600')}><span aria-hidden="true" className={'text-lg leading-none px-4 py-1 rounded-full ' + (tab === k ? 'bg-brand-100' : '')}>{i}</span>{l.replace('Portfolio ', '')}</button>)}</nav>
+      <nav aria-label="Main" className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-stone-200 grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">{TABS.map(([k, l, i]) => <button key={k} onClick={() => go(k)} aria-current={tab === k ? 'page' : undefined} className={'min-h-[60px] flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ' + (tab === k ? 'text-brand-800' : 'text-stone-600')}><span aria-hidden="true" className={'text-lg leading-none px-4 py-1 rounded-full ' + (tab === k ? 'bg-brand-100' : '')}>{i}</span>{l.replace('Portfolio ', '').replace('How it works', 'How')}</button>)}</nav>
     </div>
   );
 };

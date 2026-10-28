@@ -1,6 +1,8 @@
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
+_to_delete/
 Minor/
 venv/
 .venv/
@@ -15,3 +17,7 @@ dist/
 
 # Rebuildable outputs
 data/risk/
+rag_store/
+
+# Large public downloads (annual report PDFs)
+documents/

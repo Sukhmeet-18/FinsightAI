@@ -48,3 +48,46 @@ export async function buildPortfolio(answers, capital, goal) {
   }
   return res.json();
 }
+
+// Say vs. Show results for every company (computed offline by scripts/run_detector.py).
+export async function fetchDetector() {
+  let res;
+  try {
+    res = await fetch(`${API}/detector/summary`);
+  } catch {
+    throw new Error("Can't reach the backend. Is uvicorn running on port 8000?");
+  }
+  if (!res.ok) {
+    let msg = 'The backend returned an error (' + res.status + ').';
+    try {
+      const j = await res.json();
+      if (typeof j.detail === 'string') msg = j.detail;
+    } catch { /* plain-text error, keep default */ }
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+// Ask a question about one company's annual report. Returns { answer, found, sources, unverified_pages, ... }.
+export async function askReport(ticker, question) {
+  let res;
+  try {
+    res = await fetch(`${API}/rag/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker, question }),
+    });
+  } catch {
+    throw new Error("Can't reach the backend. Is uvicorn running on port 8000?");
+  }
+  if (!res.ok) {
+    let msg = 'The backend returned an error (' + res.status + ').';
+    try {
+      const j = await res.json();
+      if (typeof j.detail === 'string') msg = j.detail;
+      else if (Array.isArray(j.detail)) msg = 'Please type a question and pick a company.';
+    } catch { /* plain-text error, keep default */ }
+    throw new Error(msg);
+  }
+  return res.json();
+}

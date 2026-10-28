@@ -1,43 +1,83 @@
-import { useState } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RTooltip } from 'recharts';
+import { useState, useEffect } from 'react';
 import { COMPANIES } from '../data';
-import { pct, EM, CORAL, Card } from '../ui';
+import { fetchDetector } from '../api';
+import { Card, Skel, Btn } from '../ui';
 
-const SVS = {
-  tcs: { tone: 78, quote: '“We see strong demand in AI and cloud, and expect growth to build through the year.”', page: 'p. 12', trend: [1.64, 1.91, 2.25, 2.41, 2.55], ok: true, why: 'Management sounds confident and revenue has risen four years running.' },
-  hul: { tone: 58, quote: '“Demand is steady, and we remain cautious on rural recovery.”', page: 'p. 9', trend: [0.47, 0.51, 0.59, 0.62, 0.63], ok: true, why: 'A measured tone matches slow but steady revenue growth.' },
-  itc: { tone: 74, quote: '“We are confident about the outlook and see momentum across segments.”', page: 'p. 14', trend: [0.59, 0.76, 0.94, 0.75, 0.67], ok: false, why: 'Management sounds upbeat, yet revenue has fallen for two straight years.' },
-  maruti: { tone: 66, quote: '“Record volumes and a strong pipeline of new launches.”', page: 'p. 11', trend: [0.7, 0.88, 1.18, 1.41, 1.62], ok: true, why: 'Optimistic words match fast-rising sales, though margins stay thin.' },
-  rel: { tone: 84, quote: '“Our best year yet, and we expect even stronger profitability ahead.”', page: 'p. 7', trend: [5.4, 6.9, 8.8, 9.0, 9.7], ok: false, why: 'Very upbeat tone, but profit margin is only 6.6% and growth has slowed.' },
+const VERDICT = {
+  consistent: { title: 'Aligned', why: 'Compared with the other companies, the tone of the report matches what the numbers show.', ok: true },
+  says_more_than_shows: { title: 'Says more than it shows', why: 'The report sounds more upbeat than the numbers justify, compared with the other companies.', ok: false },
+  shows_more_than_says: { title: 'Shows more than it says', why: 'The numbers look stronger than the report’s cautious tone suggests, compared with the other companies.', ok: false },
+  not_enough_data: { title: 'Not enough data', why: 'We could not measure the tone or the trend for this company.', ok: null },
+  not_enough_companies: { title: 'Not enough companies', why: 'Comparison needs at least three analysed companies.', ok: null },
 };
-const Gauge = ({ v }) => (
-  <div>
-    <div className="relative h-4 rounded-full" style={{ background: 'linear-gradient(90deg,#f2c978,#ece3b8,#7fc9a8)' }}><div className="absolute top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-md ring-4 ring-brand-700 grid place-items-center text-[11px] font-bold tabular-nums" style={{ left: v + '%' }}>{v}</div></div>
-    <div className="flex justify-between text-sm text-stone-600 mt-3"><span>Cautious</span><span>Neutral</span><span>Optimistic</span></div>
+const clamp = (x) => Math.max(0, Math.min(100, x));
+const sign = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+
+const Gauge = ({ z, left, right, label }) => (
+  <div role="img" aria-label={label}>
+    <div className="relative h-4 rounded-full" style={{ background: 'linear-gradient(90deg,#f2c978,#ece3b8,#7fc9a8)' }}>
+      <div className="absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-md ring-4 ring-brand-700" style={{ left: clamp(50 + (z || 0) * 25) + '%' }} />
+    </div>
+    <div className="flex justify-between text-sm text-stone-600 mt-3"><span>{left}</span><span>Average of the five</span><span>{right}</span></div>
   </div>
 );
+
+const Quote = ({ q, name, kind }) => (
+  <blockquote className="rounded-2xl bg-white p-4 text-stone-800 leading-relaxed text-sm">
+    <div className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-1">{kind}</div>
+    “{q.text}”<footer className="text-xs text-stone-500 mt-2">{name} · annual report · PDF page {q.page}</footer>
+  </blockquote>
+);
+
 const SayShow = () => {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
   const [id, setId] = useState('itc');
-  const d = SVS[id], c = COMPANIES.find((x) => x.id === id);
-  const data = d.trend.map((v, i) => ({ y: 'FY' + (21 + i), v }));
-  const ok = d.ok;
+  const load = () => { setError(''); setData(null); fetchDetector().then(setData).catch((e) => setError(e.message)); };
+  useEffect(() => { load(); }, []);
+  const co = COMPANIES.find((x) => x.id === id);
+  const r = data && data.companies.find((x) => x.ticker === co.ticker);
+  const v = r && (VERDICT[r.verdict] || VERDICT.not_enough_data);
+  const tr = r && r.trend;
   return (
     <div>
-      <div className="mb-5"><span className="text-xs font-semibold uppercase tracking-widest text-brand-800">New</span><h1 className="font-display font-normal text-4xl sm:text-5xl tracking-tight">Say vs. Show</h1><p className="text-stone-600 mt-2 max-w-xl">Does what management says match what the numbers show?</p></div>
+      <div className="mb-5"><span className="text-xs font-semibold uppercase tracking-widest text-brand-800">Experimental</span><h1 className="font-display font-normal text-4xl sm:text-5xl tracking-tight">Say vs. Show</h1><p className="text-stone-600 mt-2 max-w-xl">Does what the annual report says match what the numbers show?</p></div>
       <div className="flex flex-wrap gap-2 mb-5" role="radiogroup" aria-label="Company">{COMPANIES.map((x) => <button key={x.id} role="radio" aria-checked={x.id === id} onClick={() => setId(x.id)} className={'rounded-full px-4 py-2 text-sm font-semibold ring-1 transition ' + (x.id === id ? 'bg-brand-700 text-white ring-brand-700' : 'bg-white text-stone-800 ring-stone-200 hover:bg-stone-50')}>{x.name}</button>)}</div>
-      <div className={'rounded-3xl p-6 sm:p-8 flex items-center gap-5 mb-5 ' + (ok ? 'bg-brand-700 text-white' : 'bg-gold-400 text-gold-950')} role="status">
-        <div className={'h-16 w-16 shrink-0 rounded-full grid place-items-center text-3xl font-bold bg-white ' + (ok ? 'text-brand-700' : 'text-gold-800')} aria-hidden="true">{ok ? '✓' : '≠'}</div>
-        <div><div className="font-display text-5xl sm:text-6xl tracking-tight">{ok ? 'Aligned' : 'Mismatch'}</div><p className="text-lg mt-1">{d.why}</p></div>
-      </div>
-      <div className="grid gap-5 md:grid-cols-2">
-        <Card className="p-6 sm:p-8 !bg-gold-50"><div className="text-sm font-semibold text-gold-900 uppercase tracking-wide">What management says</div><h2 className="text-xl font-bold mt-1 mb-6">Tone of the annual report</h2>
-          <Gauge v={d.tone} />
-          <blockquote className="mt-8 rounded-2xl bg-white p-4 text-stone-800 leading-relaxed">{d.quote}<footer className="text-xs text-stone-500 mt-2">{c.name} · Annual Report FY25 · {d.page}</footer></blockquote></Card>
-        <Card className="p-6 sm:p-8 !bg-brand-50"><div className="text-sm font-semibold text-brand-900 uppercase tracking-wide">What the numbers show</div><h2 className="text-xl font-bold mt-1 mb-1">Revenue, 5 years</h2><p className="text-xs text-stone-500 mb-4">₹ lakh crore</p>
-          <div className="h-44"><ResponsiveContainer><LineChart data={data} margin={{ top: 8, right: 12, left: 12, bottom: 0 }}><XAxis dataKey="y" tickLine={false} axisLine={false} fontSize={12} /><YAxis hide domain={['dataMin', 'dataMax']} /><RTooltip formatter={(v) => ['₹' + v + ' lakh cr', 'Revenue']} /><Line dataKey="v" stroke={d.trend[4] >= d.trend[3] ? EM : CORAL} strokeWidth={3} dot={{ r: 4, fill: '#fff', strokeWidth: 2 }} /></LineChart></ResponsiveContainer></div>
-          <div className="grid grid-cols-3 gap-3 mt-4 text-center">{[['Growth', pct(c.rev)], ['Margin', c.margin + '%'], ['ROE', c.roe + '%']].map(([k, v]) => <div key={k} className="rounded-xl bg-white py-2"><div className="text-xs text-stone-500">{k}</div><div className="font-bold tabular-nums">{v}</div></div>)}</div></Card>
-      </div>
-      <p className="text-xs text-stone-500 mt-4">Mock content for this planned feature.</p>
+      {error && <Card className="p-6 mb-5 !bg-coral-50" role="alert"><h3 className="font-semibold">Say vs. Show is not ready</h3><p className="text-sm text-stone-700 mt-1">{error}</p><Btn className="mt-4" onClick={load}>Try again</Btn></Card>}
+      {!error && !data && <div className="grid gap-4"><Skel className="h-28 rounded-3xl" /><div className="grid gap-5 md:grid-cols-2"><Skel className="h-64 rounded-2xl" /><Skel className="h-64 rounded-2xl" /></div></div>}
+      {data && !r && <Card className="p-6 mb-5"><p className="text-stone-700">No result for {co.name} yet. Build its report index and run the analysis again.</p></Card>}
+      {r && (
+        <>
+          <div className={'rounded-3xl p-6 sm:p-8 flex items-center gap-5 mb-5 ' + (v.ok === true ? 'bg-brand-700 text-white' : v.ok === false ? 'bg-gold-400 text-gold-950' : 'bg-stone-200 text-stone-900')} role="status">
+            <div className={'h-16 w-16 shrink-0 rounded-full grid place-items-center text-3xl font-bold bg-white ' + (v.ok === true ? 'text-brand-700' : v.ok === false ? 'text-gold-800' : 'text-stone-600')} aria-hidden="true">{v.ok === true ? '✓' : v.ok === false ? '≠' : '?'}</div>
+            <div><div className="font-display text-4xl sm:text-5xl tracking-tight">{v.title}</div><p className="text-lg mt-1">{v.why}</p></div>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <Card className="p-6 sm:p-8 !bg-gold-50">
+              <div className="text-sm font-semibold text-gold-900 uppercase tracking-wide">What the report says</div>
+              <h2 className="text-xl font-bold mt-1 mb-6">Tone of the narrative</h2>
+              <Gauge z={r.tone_z} left="More cautious" right="More upbeat" label="Tone compared with the other companies" />
+              <p className="text-sm text-stone-600 mt-4">{r.sentences} sentences read. Positive {Math.round((r.positive_share || 0) * 100)}%, negative {Math.round((r.negative_share || 0) * 100)}%. Net tone {r.tone == null ? 'n/a' : sign(r.tone, 2)}.</p>
+              <div className="grid gap-3 mt-4">
+                {r.most_positive && r.most_positive[0] && <Quote q={r.most_positive[0]} name={co.name} kind="Most upbeat sentence" />}
+                {r.most_negative && r.most_negative[0] && <Quote q={r.most_negative[0]} name={co.name} kind="Most cautious sentence" />}
+              </div>
+            </Card>
+            <Card className="p-6 sm:p-8 !bg-brand-50">
+              <div className="text-sm font-semibold text-brand-900 uppercase tracking-wide">What the numbers show</div>
+              <h2 className="text-xl font-bold mt-1 mb-6">Growth, margin and return</h2>
+              <Gauge z={r.trend_z} left="Weaker" right="Stronger" label="Trend compared with the other companies" />
+              {tr ? (
+                <div className="grid grid-cols-3 gap-3 mt-6 text-center">
+                  {[['Latest revenue growth', tr.revenue_growth_latest == null ? 'n/a' : sign(tr.revenue_growth_latest * 100) + '%'], ['Margin change', tr.margin_change == null ? 'n/a' : sign(tr.margin_change * 100) + ' pts'], ['ROE change', tr.roe_change == null ? 'n/a' : sign(tr.roe_change * 100) + ' pts']].map(([k, val]) => <div key={k} className="rounded-xl bg-white py-3 px-1"><div className="text-xs text-stone-500">{k}</div><div className="font-bold tabular-nums">{val}</div></div>)}
+                </div>
+              ) : <p className="text-sm text-stone-600 mt-6">No yearly results were found for this company.</p>}
+              {tr && <p className="text-xs text-stone-500 mt-3">Based on yearly results for {tr.years.join(', ')}. A single one-off item can distort a short trend.</p>}
+            </Card>
+          </div>
+          <p className="text-xs text-stone-500 mt-4">Annual reports usually sound upbeat, so each score is compared with the other four companies and a flag is raised only when the gap between the two is large (gap {r.gap == null ? 'n/a' : sign(r.gap, 2)}). This is experimental: the thresholds have not yet been checked against labelled examples.</p>
+        </>
+      )}
     </div>
   );
 };

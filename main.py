@@ -3,6 +3,8 @@ import yfinance as yf
 import time
 from backend.classifier.service import model_view
 from backend.robo_advisor.router import router as portfolio_router
+from backend.rag.router import router as rag_router
+from backend.detector.router import router as detector_router
 
 from fastapi.middleware.cors import CORSMiddleware # TO allow CORS eplciitly
 from backend.risk_model.router import router as risk_router
@@ -22,6 +24,8 @@ app=FastAPI()
 
 app.include_router(risk_router, prefix="/risk", tags=["risk"])
 app.include_router(portfolio_router, prefix="/portfolio", tags=["portfolio"])
+app.include_router(rag_router, prefix="/rag", tags=["rag"])
+app.include_router(detector_router, prefix="/detector", tags=["detector"])
 
 
 
