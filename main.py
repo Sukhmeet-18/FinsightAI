@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 import yfinance as yf
 import time
+import os
+import pandas as pd
 from backend.classifier.service import model_view
 from backend.robo_advisor.router import router as portfolio_router
 from backend.rag.router import router as rag_router
@@ -50,7 +52,7 @@ def get_roe_fallback(stock):
     except(KeyError,IndexError):
         return None
 
-def get_metrics(ticker:str):
+def _yahoo_metrics(ticker:str):
     try:
         stock=yf.Ticker(ticker)
         info=stock.info or {}
@@ -73,6 +75,91 @@ def get_metrics(ticker:str):
         "current_price": info.get("currentPrice") or info.get("regularMarketPrice"),
         "live": True,
     }
+
+_saved={}
+
+def _saved_row(sym):
+    if "m" not in _saved:
+        try:
+            _saved["m"]=pd.read_csv(os.path.join("data","metrics_latest.csv")).set_index("ticker")
+        except Exception:
+            _saved["m"]=None
+    m=_saved["m"]
+    return m.loc[sym] if m is not None and sym in m.index else None
+
+def _latest_price(ticker,sym):
+    # 1) Yahoo's price-history call, which cloud servers can usually still reach
+    try:
+        c=yf.Ticker(ticker).history(period="5d")["Close"].dropna()
+        if len(c):
+            return float(c.iloc[-1]),"history"
+    except Exception as e:
+        print(f"[yfinance] {ticker} history failed: {type(e).__name__}: {e}")
+    # 2) last close in the saved price file
+    try:
+        c=pd.read_csv(os.path.join("data","prices",f"{sym}.csv"))["Close"].dropna()
+        if len(c):
+            return float(c.iloc[-1]),"saved"
+    except Exception:
+        pass
+    return None,None
+
+_fin_cache={}
+
+def _financial_metrics(ticker):
+    """Growth, margin and ROE worked out from Yahoo's yearly statements (a different Yahoo call
+    from .info, and one that usually still answers when .info is blocked). Cached for 6 hours."""
+    hit=_fin_cache.get(ticker)
+    if hit and time.time()-hit[0]<6*3600:
+        return hit[1]
+    out={}
+    try:
+        s=yf.Ticker(ticker)
+        fin=s.financials
+        rev=fin.loc["Total Revenue"].dropna()
+        ni=fin.loc["Net Income"].dropna()
+        out["profit_margin"]=float(ni.iloc[0]/rev.iloc[0])
+        if len(rev)>=2:
+            out["revenue_growth"]=float(rev.iloc[0]/rev.iloc[1]-1)
+        eq=s.balance_sheet.loc["Stockholders Equity"].dropna()
+        out["roe"]=float(ni.iloc[0]/eq.iloc[0])
+    except Exception as e:
+        print(f"[yfinance] {ticker} financials failed: {type(e).__name__}: {e}")
+    if out:
+        _fin_cache[ticker]=(time.time(),out)
+    return out
+
+def get_metrics(ticker:str):
+    """Order of preference for every number: Yahoo info -> Yahoo statements/history -> saved data files.
+    m["sources"] says where each one came from."""
+    m=_yahoo_metrics(ticker)
+    sym=ticker.replace(".NS","")
+    fields=("revenue_growth","profit_margin","roe")
+    src={k:("yahoo" if m[k] is not None else None) for k in fields}
+
+    missing=[k for k in fields if m[k] is None]
+    if missing:
+        f=_financial_metrics(ticker)
+        for k in missing:
+            if k in f:
+                m[k]=f[k]; src[k]="yahoo-statements"
+
+    row=_saved_row(sym)
+    for k in fields:
+        if m[k] is None and row is not None and pd.notna(row[k]):
+            m[k]=float(row[k]); src[k]="saved"
+
+    if m["current_price"] is not None:
+        src["current_price"]="yahoo"
+    else:
+        p,how=_latest_price(ticker,sym)
+        if p is not None:
+            m["current_price"]=p
+            src["current_price"]="saved" if how=="saved" else "yahoo-history"
+
+    m["sources"]=src
+    m["saved_fields"]=[k for k,v in src.items() if v=="saved"]
+    return m
 
 def normalize(values):
     known=[v for v in values if v is not None]
