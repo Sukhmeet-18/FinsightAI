@@ -34,6 +34,7 @@ app.include_router(detector_router, prefix="/detector", tags=["detector"])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "https://finsight-ai-psi-seven.vercel.app"],
+    allow_origin_regex=r"https://finsight[a-z0-9-]*\.vercel\.app",   # preview / renamed Vercel URLs
     allow_methods=["*"],
     allow_headers=["*"]
 )
