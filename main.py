@@ -50,12 +50,18 @@ def get_roe_fallback(stock):
         return None
 
 def get_metrics(ticker:str):
-    stock=yf.Ticker(ticker)
-    info=stock.info
+    try:
+        stock=yf.Ticker(ticker)
+        info=stock.info or {}
 
-    roe = info.get("returnOnEquity")
-    if roe is None:
-        roe = get_roe_fallback(stock)
+        roe = info.get("returnOnEquity")
+        if roe is None:
+            roe = get_roe_fallback(stock)
+    except Exception as e:
+        # Yahoo can refuse requests from cloud servers; do not crash the whole dashboard
+        print(f"[yfinance] {ticker} failed: {type(e).__name__}: {e}")
+        return {"ticker": ticker, "name": ticker, "revenue_growth": None, "profit_margin": None,
+                "roe": None, "current_price": None, "live": False}
 
     return {
         "ticker": ticker,
@@ -64,9 +70,15 @@ def get_metrics(ticker:str):
         "profit_margin": info.get("profitMargins"),
         "roe": roe,
         "current_price": info.get("currentPrice") or info.get("regularMarketPrice"),
+        "live": True,
     }
 
 def normalize(values):
+    known=[v for v in values if v is not None]
+    if not known:
+        return[0.5 for _ in values]
+    mid=sorted(known)[len(known)//2]
+    values=[mid if v is None else v for v in values]   # missing value counts as the middle one
     lo=min(values)
     hi=max(values)
     if hi==lo:
@@ -171,11 +183,10 @@ def companies_overview():
     pm = normalize([m["profit_margin"] for m in metrics])
     ro = normalize([m["roe"] for m in metrics])
 
+    if not any(m["live"] for m in metrics) and _overview_cache["data"]:
+        return _overview_cache["data"]          # Yahoo failed for all five: keep showing the last good data
+
     out = []
-    for i, m in enumerate(metrics):
-        s = 0.4 * rg[i] + 0.3 * pm[i] + 0.3 * ro[i]
-        out.append({**m, "score": round(s * 100), "label": score_to_label(s),
-                    "model": model_view(m["ticker"].replace(".NS", ""))})
     for i, m in enumerate(metrics):
         s = 0.4 * rg[i] + 0.3 * pm[i] + 0.3 * ro[i]
         out.append({**m, "score": round(s * 100), "label": score_to_label(s),
